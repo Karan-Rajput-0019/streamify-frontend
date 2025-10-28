@@ -1,76 +1,638 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Streamify - Modern Music Streaming</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streamify - Your Music Streaming Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="main-app">
-  <div id="auth-section" class="card shadow">
-    <h2>Login</h2>
-    <form id="login-form">
-      <input type="email" id="login-email" placeholder="Email" required>
-      <input type="password" id="login-password" placeholder="Password" required>
-      <button type="submit" class="btn btn--primary">Login</button>
-    </form>
-    <div>
-      <a href="#" onclick="showSignup()" class="link">Sign up</a>
+<body>
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p id="loading-text">Loading...</p>
     </div>
-    <div id="auth-error" class="error"></div>
-  </div>
-  <div id="signup-section" class="card shadow" style="display:none;">
-    <h2>Sign Up</h2>
-    <form id="signup-form">
-      <input type="text" id="signup-username" placeholder="Username" required>
-      <input type="email" id="signup-email" placeholder="Email" required>
-      <input type="password" id="signup-password" placeholder="Password" required>
-      <button type="submit" class="btn btn--primary">Sign Up</button>
-    </form>
-    <div>
-      <a href="#" onclick="showLogin()" class="link">Back to login</a>
+
+    <!-- Authentication Page -->
+    <div id="auth-page" class="auth-page">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1 class="logo"><i class="fas fa-music"></i> Streamify</h1>
+                <p class="tagline">Stream unlimited music, anywhere, anytime</p>
+            </div>
+            
+            <!-- Login Form -->
+            <div id="login-form" class="auth-form active">
+                <h2>Welcome Back</h2>
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="login-email">Email or Username</label>
+                        <input type="text" id="login-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" class="form-control" required>
+                    </div>
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="remember-me">
+                            <span>Remember me</span>
+                        </label>
+                        <a href="#" class="link">Forgot password?</a>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width">Log In</button>
+                </form>
+                <p class="auth-toggle">
+                    Don't have an account? 
+                    <a href="#" onclick="toggleAuthForm(event)">Sign up</a>
+                </p>
+            </div>
+            
+            <!-- Signup Form -->
+            <div id="signup-form" class="auth-form">
+                <h2>Create Account</h2>
+                <form onsubmit="handleSignup(event)">
+                    <div class="form-group">
+                        <label for="signup-username">Username</label>
+                        <input type="text" id="signup-username" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" class="form-control" required minlength="6" oninput="checkPasswordStrength()">
+                        <div id="password-strength" class="password-strength">
+                            <div class="strength-bar"></div>
+                            <span class="strength-text"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-confirm-password">Confirm Password</label>
+                        <input type="password" id="signup-confirm-password" class="form-control" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width">Sign Up</button>
+                </form>
+                <p class="auth-toggle">
+                    Already have an account? 
+                    <a href="#" onclick="toggleAuthForm(event)">Log in</a>
+                </p>
+            </div>
+        </div>
     </div>
-    <div id="signup-error" class="error"></div>
-  </div>
-  <div id="main-content" style="display:none;">
-    <header>
-      <h1>🎧 Streamify Music</h1>
-      <button id="logout-btn" class="btn btn--danger">Logout</button>
-    </header>
-    <section id="user-profile" class="card"></section>
-    <section>
-      <h2 class="section-heading">Recommended For You</h2>
-      <div id="recommend-list" class="grid"></div>
-    </section>
-    <section>
-      <h2 class="section-heading">Music Library</h2>
-      <input type="text" id="search-input" placeholder="Search music ..." style="width:100%;margin-bottom:13px;padding:10px;">
-      <div id="music-list" class="grid"></div>
-      <audio id="audio-player" controls style="width:100%;margin-top:20px"></audio>
-    </section>
-    <section>
-      <h2 class="section-heading">Your Playlists</h2>
-      <form id="playlist-form" class="playlist-form">
-        <input type="text" id="playlist-name" placeholder="New playlist name" required>
-        <button type="submit" class="btn btn--secondary">Create Playlist</button>
-      </form>
-      <div id="playlist-list" class="grid"></div>
-    </section>
-  </div>
-  <div id="playlist-modal" class="modal" style="display:none;">
-    <div class="modal-content card">
-      <span class="close" onclick="closeModal()">&times;</span>
-      <h3 id="modal-playlist-name"></h3>
-      <div id="modal-songs"></div>
+
+    <!-- Main Application -->
+    <div id="main-app" class="main-app" style="display: none;">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="logo"><i class="fas fa-music"></i> Streamify</h1>
+            </div>
+            <div class="header-center">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-input" placeholder="Search for songs, artists, albums..." oninput="handleSearch()">
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-menu">
+                    <button class="user-avatar" onclick="toggleUserMenu()">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="user-name">User</span>
+                    </button>
+                    <div id="user-dropdown" class="user-dropdown">
+                        <a href="#" onclick="showProfile()"><i class="fas fa-user"></i> Profile</a>
+                        <a href="#" onclick="toggleTheme()"><i class="fas fa-moon"></i> Toggle Theme</a>
+                        <a href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" onclick="showView('home')">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showView('browse')">
+                    <i class="fas fa-compass"></i>
+                    <span>Browse</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showView('library')">
+                    <i class="fas fa-book"></i>
+                    <span>Your Library</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showView('playlists')">
+                    <i class="fas fa-list"></i>
+                    <span>Playlists</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showView('liked')">
+                    <i class="fas fa-heart"></i>
+                    <span>Liked Songs</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showView('downloaded')">
+                    <i class="fas fa-download"></i>
+                    <span>Downloads</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showView('statistics')">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Statistics</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showView('settings')">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            <div class="sidebar-playlists">
+                <h3>Your Playlists</h3>
+                <div id="sidebar-playlists-list"></div>
+                <button class="btn btn--secondary btn--sm" onclick="showCreatePlaylist()">
+                    <i class="fas fa-plus"></i> Create Playlist
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Home View -->
+            <div id="home-view" class="content-view active">
+                <section class="section">
+                    <div class="stats-banner">
+                        <div class="stat-item">
+                            <div class="stat-icon">🌍</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="total-songs-count">25,000+</div>
+                                <div class="stat-label">Songs Available</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon">🗣️</div>
+                            <div class="stat-info">
+                                <div class="stat-value">25+</div>
+                                <div class="stat-label">Languages</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon">🌏</div>
+                            <div class="stat-info">
+                                <div class="stat-value">6</div>
+                                <div class="stat-label">Continents</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon">🎵</div>
+                            <div class="stat-info">
+                                <div class="stat-value">50+</div>
+                                <div class="stat-label">Genres</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>Featured Today</h2>
+                    <div id="featured-songs" class="song-grid"></div>
+                </section>
+                
+                <section class="section">
+                    <h2>Recommended for You</h2>
+                    <div id="recommended-songs" class="song-grid"></div>
+                </section>
+
+                <section class="section">
+                    <h2>Top Songs in India</h2>
+                    <div id="india-charts" class="song-grid"></div>
+                </section>
+
+                <section class="section">
+                    <h2>Latin Hits</h2>
+                    <div id="latin-charts" class="song-grid"></div>
+                </section>
+                
+                <section class="section">
+                    <h2>Trending Worldwide</h2>
+                    <div id="trending-songs" class="song-grid"></div>
+                </section>
+
+                <section class="section">
+                    <h2>K-Pop Favorites</h2>
+                    <div id="kpop-charts" class="song-grid"></div>
+                </section>
+            </div>
+
+            <!-- Browse View -->
+            <div id="browse-view" class="content-view">
+                <div class="browse-header">
+                    <h2>Browse Music</h2>
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <label for="region-filter" class="form-label">Region</label>
+                            <select id="region-filter" class="form-control" onchange="applyFilters()">
+                                <option value="">All Regions</option>
+                                <option value="Asia">Asia</option>
+                                <option value="Europe">Europe</option>
+                                <option value="Africa">Africa</option>
+                                <option value="North America">North America</option>
+                                <option value="South America">South America</option>
+                                <option value="Oceania">Oceania</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="language-filter" class="form-label">Language</label>
+                            <select id="language-filter" class="form-control" onchange="applyFilters()">
+                                <option value="">All Languages</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <h3 style="margin-top: 24px;">Browse by Genre</h3>
+                <div id="genre-grid" class="genre-grid"></div>
+                <div id="browse-results" class="song-grid" style="margin-top: 30px;"></div>
+            </div>
+
+            <!-- Library View -->
+            <div id="library-view" class="content-view">
+                <h2>Your Library</h2>
+                <div class="library-tabs">
+                    <button class="tab-btn active" onclick="showLibraryTab('all')">All Songs</button>
+                    <button class="tab-btn" onclick="showLibraryTab('recent')">Recently Played</button>
+                </div>
+                <div id="library-songs" class="song-grid"></div>
+            </div>
+
+            <!-- Playlists View -->
+            <div id="playlists-view" class="content-view">
+                <h2>Your Playlists</h2>
+                <div id="playlists-grid" class="playlists-grid"></div>
+            </div>
+
+            <!-- Liked Songs View -->
+            <div id="liked-view" class="content-view">
+                <h2>Liked Songs</h2>
+                <div id="liked-songs" class="song-grid"></div>
+            </div>
+
+            <!-- Downloaded View -->
+            <div id="downloaded-view" class="content-view">
+                <h2>Downloaded Songs</h2>
+                <div id="downloaded-songs" class="song-grid"></div>
+            </div>
+
+            <!-- Search Results View -->
+            <div id="search-view" class="content-view">
+                <div class="browse-header">
+                    <h2>Search Results</h2>
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <label for="search-region-filter" class="form-label">Region</label>
+                            <select id="search-region-filter" class="form-control" onchange="handleSearch()">
+                                <option value="">All Regions</option>
+                                <option value="Asia">Asia</option>
+                                <option value="Europe">Europe</option>
+                                <option value="Africa">Africa</option>
+                                <option value="North America">North America</option>
+                                <option value="South America">South America</option>
+                                <option value="Oceania">Oceania</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="search-language-filter" class="form-label">Language</label>
+                            <select id="search-language-filter" class="form-control" onchange="handleSearch()">
+                                <option value="">All Languages</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div id="search-results" class="song-grid" style="margin-top: 24px;"></div>
+            </div>
+
+            <!-- Statistics View -->
+            <div id="statistics-view" class="content-view">
+                <h2>Your Music Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-icon">🎵</div>
+                        <div class="stat-card-value" id="stat-total-plays">0</div>
+                        <div class="stat-card-label">Songs Played</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon">⏱️</div>
+                        <div class="stat-card-value" id="stat-total-time">0h</div>
+                        <div class="stat-card-label">Listening Time</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon">❤️</div>
+                        <div class="stat-card-value" id="stat-liked-songs">0</div>
+                        <div class="stat-card-label">Liked Songs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon">📁</div>
+                        <div class="stat-card-value" id="stat-playlists">0</div>
+                        <div class="stat-card-label">Playlists</div>
+                    </div>
+                </div>
+                <div class="stats-section">
+                    <h3>Top Artists</h3>
+                    <div id="top-artists" class="top-list"></div>
+                </div>
+                <div class="stats-section">
+                    <h3>Top Songs</h3>
+                    <div id="top-songs" class="top-list"></div>
+                </div>
+                <div class="stats-section">
+                    <h3>Top Genres</h3>
+                    <div id="top-genres" class="genre-stats"></div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settings-view" class="content-view">
+                <h2>Settings</h2>
+                <div class="settings-container">
+                    <div class="settings-section">
+                        <h3>Profile Settings</h3>
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" id="settings-username" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="settings-email" class="form-control" readonly>
+                        </div>
+                        <button class="btn btn--secondary" onclick="editProfile()">Edit Profile</button>
+                    </div>
+                    <div class="settings-section">
+                        <h3>Playback Settings</h3>
+                        <div class="setting-item">
+                            <label class="setting-label">
+                                <span>Audio Quality</span>
+                                <select id="audio-quality" class="form-control" onchange="saveSettings()">
+                                    <option value="low">Low (96 kbps)</option>
+                                    <option value="medium" selected>Medium (160 kbps)</option>
+                                    <option value="high">High (320 kbps)</option>
+                                    <option value="lossless">Lossless</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">
+                                <span>Crossfade Duration</span>
+                                <input type="range" id="crossfade" min="0" max="12" value="0" class="form-control" onchange="saveSettings()">
+                                <span id="crossfade-value">0s</span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="gapless-playback" onchange="saveSettings()">
+                                <span>Gapless Playback</span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="normalize-audio" onchange="saveSettings()">
+                                <span>Normalize Audio</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3>Privacy Settings</h3>
+                        <div class="setting-item">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="public-profile" checked onchange="saveSettings()">
+                                <span>Public Profile</span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="show-activity" checked onchange="saveSettings()">
+                                <span>Show Listening Activity</span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="explicit-filter" onchange="saveSettings()">
+                                <span>Filter Explicit Content</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3>Download Settings</h3>
+                        <div class="setting-item">
+                            <label class="setting-label">
+                                <span>Download Quality</span>
+                                <select id="download-quality" class="form-control" onchange="saveSettings()">
+                                    <option value="low">Low (96 kbps)</option>
+                                    <option value="medium">Medium (160 kbps)</option>
+                                    <option value="high" selected>High (320 kbps)</option>
+                                    <option value="lossless">Lossless</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="auto-download-liked" onchange="saveSettings()">
+                                <span>Auto-download Liked Songs</span>
+                            </label>
+                        </div>
+                        <div class="stat-item">
+                            <span>Storage Used:</span>
+                            <span id="storage-used">0 MB / 5 GB</span>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3>Appearance</h3>
+                        <div class="setting-item">
+                            <label class="setting-label">
+                                <span>Theme</span>
+                                <select id="theme-select" class="form-control" onchange="changeTheme()">
+                                    <option value="auto">Auto (System)</option>
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playlist Detail View -->
+            <div id="playlist-detail-view" class="content-view">
+                <div class="playlist-header">
+                    <div class="playlist-cover">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <div class="playlist-info">
+                        <h3>Playlist</h3>
+                        <h2 id="playlist-detail-name"></h2>
+                        <p id="playlist-detail-desc"></p>
+                        <p class="playlist-meta">
+                            <span id="playlist-detail-count"></span> songs
+                        </p>
+                        <div class="playlist-actions">
+                            <button class="btn btn--primary" onclick="playPlaylist()">
+                                <i class="fas fa-play"></i> Play
+                            </button>
+                            <button class="btn btn--secondary" onclick="showEditPlaylist()">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="playlist-detail-songs" class="song-list"></div>
+            </div>
+        </main>
+
+        <!-- Music Player -->
+        <div id="music-player" class="music-player" style="display: none;">
+            <div class="player-left">
+                <img id="player-cover" src="" alt="Album cover" class="player-cover">
+                <div class="player-info">
+                    <div class="player-title" id="player-title">No song playing</div>
+                    <div class="player-artist" id="player-artist"></div>
+                </div>
+                <button class="player-btn" id="like-btn" onclick="toggleLike()">
+                    <i class="far fa-heart"></i>
+                </button>
+            </div>
+            
+            <div class="player-center">
+                <div class="player-controls">
+                    <button class="player-btn" onclick="toggleShuffle()" id="shuffle-btn">
+                        <i class="fas fa-random"></i>
+                    </button>
+                    <button class="player-btn" onclick="previousSong()">
+                        <i class="fas fa-step-backward"></i>
+                    </button>
+                    <button class="player-btn player-btn--play" onclick="togglePlay()" id="play-btn">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class="player-btn" onclick="nextSong()">
+                        <i class="fas fa-step-forward"></i>
+                    </button>
+                    <button class="player-btn" onclick="toggleRepeat()" id="repeat-btn">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+                <div class="player-progress">
+                    <span id="current-time">0:00</span>
+                    <div class="progress-bar" onclick="seekTo(event)">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <span id="total-time">0:00</span>
+                </div>
+            </div>
+            
+            <div class="player-right">
+                <button class="player-btn" onclick="showSleepTimerDialog()" title="Sleep Timer">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="player-btn" onclick="toggleQueue()" title="Queue">
+                    <i class="fas fa-list"></i>
+                </button>
+                <div class="volume-control">
+                    <button class="player-btn" onclick="toggleMute()" id="volume-btn">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                    <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="70" oninput="changeVolume()">
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <div id="add-modal" class="modal" style="display:none;">
-    <div class="modal-content card">
-      <span class="close" onclick="closeAddModal()">&times;</span>
-      <h3>Add to Playlist</h3>
-      <div id="add-modal-list"></div>
+
+    <!-- Modals -->
+    <!-- Create Playlist Modal -->
+    <div id="create-playlist-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create Playlist</h3>
+                <button class="modal-close" onclick="closeModal('create-playlist-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form onsubmit="createPlaylist(event)">
+                <div class="form-group">
+                    <label>Playlist Name</label>
+                    <input type="text" id="playlist-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="playlist-description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="playlist-public">
+                        <span>Make this playlist public</span>
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn--secondary" onclick="closeModal('create-playlist-modal')">Cancel</button>
+                    <button type="submit" class="btn btn--primary">Create</button>
+                </div>
+            </form>
+        </div>
     </div>
-  </div>
-  <script src="app.js"></script>
+
+    <!-- Add to Playlist Modal -->
+    <div id="add-to-playlist-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add to Playlist</h3>
+                <button class="modal-close" onclick="closeModal('add-to-playlist-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="playlist-list" class="playlist-list"></div>
+            <div class="modal-footer">
+                <button class="btn btn--secondary btn--full-width" onclick="showCreatePlaylist()">Create New Playlist</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Download Progress Modal -->
+    <div id="download-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Downloading</h3>
+            </div>
+            <div class="download-progress">
+                <p id="download-song-name"></p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="download-progress"></div>
+                </div>
+                <p id="download-status">Starting download...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue Modal -->
+    <div id="queue-modal" class="modal">
+        <div class="modal-content modal-content--large">
+            <div class="modal-header">
+                <h3>Queue</h3>
+                <button class="modal-close" onclick="closeModal('queue-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="queue-list" class="queue-list"></div>
+        </div>
+    </div>
+
+    <!-- SIMPLE HTML5 AUDIO ELEMENT -->
+    <audio id="mainAudio" preload="auto">
+      <source src="https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Kangaroo_MusiQue_-_The_Neverwritten_Role_Playing_Game.mp3" type="audio/mpeg">
+      <source src="https://www.w3schools.com/html/horse.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+    <script src="app.js"></script>
 </body>
 </html>
