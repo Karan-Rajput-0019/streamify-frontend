@@ -1,110 +1,285 @@
 const API_BASE = "http://localhost:5000/api";
 let token = localStorage.getItem("token") || null;
+let userData = null, allSongs = [], playlists = [], recommendedSongs = [];
 
-// Utility for showing errors
-function showError(msg) {
-  const el = document.getElementById("auth-error") || document.getElementById("error") || document.body;
-  el.textContent = msg || "";
+function showLogin() {
+  document.getElementById("auth-section").style.display = "";
+  document.getElementById("signup-section").style.display = "none";
+  document.getElementById("main-content").style.display = "none";
+}
+function showSignup() {
+  document.getElementById("auth-section").style.display = "none";
+  document.getElementById("signup-section").style.display = "";
+  document.getElementById("main-content").style.display = "none";
+}
+function showMain() {
+  document.getElementById("auth-section").style.display = "none";
+  document.getElementById("signup-section").style.display = "none";
+  document.getElementById("main-content").style.display = "";
 }
 
-// Show/hide auth/main
-function setAuthView(visible) {
-  document.getElementById("auth-page").style.display = visible ? "" : "none";
-  document.getElementById("main-content").style.display = visible ? "none" : "";
+function showError(id, msg) { document.getElementById(id).innerText = msg || ""; }
+
+async function fetchProfile() {
+  if (!token) return;
+  const res = await fetch(`${API_BASE}/users/profile`, { headers: { "Authorization": "Bearer " + token }});
+  userData = await res.json();
+  renderProfile(userData);
 }
 
-// Login
-window.handleLogin = async function (event) {
+async function fetchRecommendations() {
+  if (!token) return;
+  const res = await fetch(`${API_BASE}/recommendations/for-you`, { headers: { "Authorization": "Bearer " + token }});
+  const data = await res.json();
+  recommendedSongs = data.songs || [];
+  renderRecommendations(recommendedSongs);
+}
+
+async function login(event) {
   event.preventDefault();
-  const email = document.getElementById("login-email").value;
-  const password = document.getElementById("login-password").value;
-  const res = await fetch(`${API_BASE}/auth/login`, {
+  let email = document.getElementById("login-email").value;
+  let password = document.getElementById("login-password").value;
+  let res = await fetch(`${API_BASE}/auth/login`, {
     method: "POST",
     headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email, password }),
   });
-  const data = await res.json();
-  if (!data.token) return showError(data.message || "Login failed!");
+  let data = await res.json();
+  if (!data.token) return showError("auth-error", data.message || "Login failed");
   token = data.token; localStorage.setItem("token", token);
-  showError("");
-  setAuthView(false);
-  await fetchSongs();
+  showError("auth-error", "");
+  showMain(); 
+  await fetchProfile(); 
+  await fetchRecommendations();
+  loadMusic();
+  loadPlaylists();
 }
+window.login = login;
 
-// Register
-window.handleSignup = async function (event) {
+async function signup(event) {
   event.preventDefault();
-  const username = document.getElementById("signup-username").value;
-  const email = document.getElementById("signup-email").value;
-  const password = document.getElementById("signup-password").value;
-  const res = await fetch(`${API_BASE}/auth/register`, {
+  let username = document.getElementById("signup-username").value;
+  let email = document.getElementById("signup-email").value;
+  let password = document.getElementById("signup-password").value;
+  let res = await fetch(`${API_BASE}/auth/register`, {
     method: "POST",
     headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ username, email, password })
+    body: JSON.stringify({ username, email, password }),
   });
-  const data = await res.json();
-  if (!data.token) return showError(data.message || "Register failed!");
+  let data = await res.json();
+  if (!data.token) return showError("signup-error", data.message || "Signup failed");
   token = data.token; localStorage.setItem("token", token);
-  showError("");
-  setAuthView(false);
-  await fetchSongs();
+  showError("signup-error", "");
+  showMain(); 
+  await fetchProfile(); 
+  await fetchRecommendations();
+  loadMusic();
+  loadPlaylists();
 }
+window.signup = signup;
 
-// Logout
-window.handleLogout = function() {
+function logout() {
   token = null; localStorage.removeItem("token");
-  setAuthView(true);
-  const musicList = document.getElementById("music-list");
-  if (musicList) musicList.innerHTML = "";
+  showLogin();
+  document.getElementById("music-list").innerHTML = "";
+  document.getElementById("playlist-list").innerHTML = "";
+  document.getElementById("user-profile").innerHTML = "";
+  document.getElementById("recommend-list").innerHTML = "";
+}
+window.logout = logout;
+
+// LOAD SONGS
+async function loadMusic() {
+  let res = await fetch(`${API_BASE}/music`);
+  let data = await res.json();
+  allSongs = data.songs || [];
+  renderSongs(allSongs);
 }
 
-// Fetch and render songs
-async function fetchSongs() {
-  const res = await fetch(`${API_BASE}/music`);
-  const data = await res.json();
-  renderSongs(data.songs || []);
-}
-
-// Render
-function renderSongs(songs) {
-  const musicList = document.getElementById("music-list");
-  if (!musicList) return;
-  musicList.innerHTML = songs.map(song => `
+// LOAD RECOMMENDATIONS
+function renderRecommendations(songs) {
+  let html = songs.map(song => `
     <div class="song-item">
       <img class="song-cover" src="${song.coverImage || ''}" alt="">
       <div class="song-info">
         <div class="song-title">${song.title}</div>
         <div class="song-artist">by ${song.artist} (${song.album || ""})</div>
       </div>
-      <button class="play-btn" onclick="playSong('${song.audioFile}')">Play</button>
+      <div>
+        <button class="play-btn" onclick="playSong('${song.audioFile}')">Play</button>
+        <button class="like-btn${userData && userData.likedSongs && userData.likedSongs.includes(song._id) ? ' liked' : ''}" onclick="toggleLike('${song._id}',this)">♥</button>
+        <button class="add-btn" onclick="openAddModal('${song._id}')">Add to Playlist</button>
+      </div>
     </div>
   `).join("");
+  document.getElementById("recommend-list").innerHTML = html;
 }
 
-// Play
+// LIKES
+async function toggleLike(songId, btn) {
+  if (!token) return alert("Login required!");
+  await fetch(`${API_BASE}/music/${songId}/like`, {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + token },
+  });
+  btn.classList.toggle("liked");
+  await fetchProfile();
+}
+
+// SONG SEARCH
+function applySongFilter() {
+  const val = (document.getElementById("search-input").value + "").toLowerCase();
+  if (!val) return renderSongs(allSongs);
+  let filtered = allSongs.filter(song =>
+    song.title.toLowerCase().includes(val) ||
+    (song.artist || "").toLowerCase().includes(val) ||
+    (song.album || "").toLowerCase().includes(val)
+  );
+  renderSongs(filtered);
+}
+window.applySongFilter = applySongFilter;
+
+// RENDER SONGS w/ Add to Playlist
+function renderSongs(songs) {
+  let html = songs.map(song => `
+    <div class="song-item">
+      <img class="song-cover" src="${song.coverImage || ''}" alt="">
+      <div class="song-info">
+        <div class="song-title">${song.title}</div>
+        <div class="song-artist">by ${song.artist} (${song.album || ""})</div>
+      </div>
+      <div>
+        <button class="play-btn" onclick="playSong('${song.audioFile}')">Play</button>
+        <button class="like-btn${userData && userData.likedSongs && userData.likedSongs.includes(song._id) ? ' liked' : ''}" onclick="toggleLike('${song._id}',this)">♥</button>
+        <button class="add-btn" onclick="openAddModal('${song._id}')">Add to Playlist</button>
+      </div>
+    </div>
+  `).join("");
+  document.getElementById("music-list").innerHTML = html;
+}
+
+async function loadPlaylists() {
+  if (!token) return;
+  let res = await fetch(`${API_BASE}/playlists/my`, {
+    headers: { "Authorization": "Bearer " + token }
+  });
+  let data = await res.json();
+  playlists = data.playlists || [];
+  renderPlaylists(playlists);
+}
+
+async function createPlaylist(event) {
+  event.preventDefault();
+  if (!token) return alert("Login required!");
+  let name = document.getElementById("playlist-name").value;
+  let res = await fetch(`${API_BASE}/playlists`, {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+    body: JSON.stringify({ name })
+  });
+  await loadPlaylists();
+  document.getElementById("playlist-name").value = "";
+}
+
+function renderPlaylists(playlists) {
+  let html = playlists.map(pl => `
+    <div class="playlist-item">
+      <b>${pl.name}</b>
+      <div>Songs: ${pl.songs.length}</div>
+      <div>Created: ${new Date(pl.createdAt).toLocaleDateString()}</div>
+      <button class="btn btn-secondary" onclick="viewPlaylist('${pl._id}')">View Songs</button>
+    </div>
+  `).join("");
+  document.getElementById("playlist-list").innerHTML = html;
+}
+
+// MODAL: View playlist+songs
+window.viewPlaylist = async function (playlistId) {
+  let res = await fetch(`${API_BASE}/playlists/${playlistId}`, {
+    headers: { "Authorization": "Bearer " + token }
+  });
+  let pl = await res.json();
+  document.getElementById("modal-playlist-name").innerText = pl.name;
+  document.getElementById("modal-songs").innerHTML = pl.songs.map((song, i) => `
+    <div>
+      <b>#${i+1}</b> ${song.title} <span style="color:#888;">by</span> ${song.artist}
+      <button class="play-btn" onclick="playSong('${song.audioFile}')">▶</button>
+      <button class="remove-btn" onclick="removeFromPlaylist('${pl._id}','${song._id}')">Remove</button>
+    </div>
+  `).join("");
+  document.getElementById("playlist-modal").style.display = "";
+};
+window.closeModal = function() {
+  document.getElementById("playlist-modal").style.display = "none";
+};
+
+// MODAL: Add to playlist
+window.openAddModal = function(songId) {
+  if (!token) return alert("Login required!");
+  if (!playlists.length) return alert("Create a playlist first!");
+  document.getElementById("add-modal-list").innerHTML = playlists.map(pl => `
+    <button class="btn btn-primary" onclick="addToPlaylist('${pl._id}','${songId}')">${pl.name}</button>
+  `).join("");
+  document.getElementById("add-modal").style.display = "";
+};
+window.closeAddModal = function() {
+  document.getElementById("add-modal").style.display = "none";
+};
+
+window.addToPlaylist = async function(plId, songId) {
+  await fetch(`${API_BASE}/playlists/${plId}/songs`, {
+    method: "POST",
+    headers: {"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+    body: JSON.stringify({ songId })
+  });
+  closeAddModal();
+  await loadPlaylists();
+};
+window.removeFromPlaylist = async function(plId, songId) {
+  await fetch(`${API_BASE}/playlists/${plId}/songs/${songId}`, {
+    method: "DELETE",
+    headers: {"Authorization":"Bearer "+token}
+  });
+  await viewPlaylist(plId);
+  await loadPlaylists();
+};
+
+function renderProfile(user) {
+  document.getElementById("user-profile").innerHTML = `
+    <div>
+      <span class="profile-label">User:</span>
+      <span class="profile-value">${user.username}</span>
+    </div>
+    <div>
+      <span class="profile-label">Email:</span>
+      <span class="profile-value">${user.email}</span>
+    </div>
+    <div>
+      <span class="profile-label">Type:</span>
+      <span class="profile-value">${user.subscriptionType || "free"}</span>
+    </div>
+    <div>
+      <span class="profile-label">Liked Songs:</span>
+      <span class="profile-value">${user.likedSongs.length}</span>
+    </div>
+    <div>
+      <span class="profile-label">Playlists:</span>
+      <span class="profile-value">${user.playlists.length}</span>
+    </div>
+  `;
+}
+
 window.playSong = function(url) {
-  let audio = document.getElementById("mainAudio") || document.getElementById("audio-player") || document.querySelector("audio");
-  if (!audio) alert("No audio player found!");
-  else { audio.src = url; audio.play(); }
-}
+  let audio = document.getElementById("audio-player");
+  audio.src = url; audio.play();
+};
 
-// On load: attach auth handler, show correct view
 window.onload = function() {
-  // Replace your onsubmit handlers if forms exist
-  if (document.getElementById("login-form")) {
-    document.getElementById("login-form").onsubmit = handleLogin;
-  }
-  if (document.getElementById("signup-form")) {
-    document.getElementById("signup-form").onsubmit = handleSignup;
-  }
-  if (document.getElementById("logout-btn")) {
-    document.getElementById("logout-btn").onclick = handleLogout;
-  }
-
-  if (token) {
-    setAuthView(false);
-    fetchSongs();
-  } else {
-    setAuthView(true);
-  }
+  document.getElementById("login-form").onsubmit = login;
+  document.getElementById("signup-form").onsubmit = signup;
+  document.getElementById("logout-btn").onclick = logout;
+  document.getElementById("playlist-form").onsubmit = createPlaylist;
+  document.getElementById("search-input").oninput = applySongFilter;
+  if (token) { showMain(); fetchProfile(); fetchRecommendations(); loadMusic(); loadPlaylists(); }
+  else { showLogin(); }
 };
