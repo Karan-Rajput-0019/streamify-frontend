@@ -23,7 +23,6 @@ a { text-decoration: none; }
 }
 .shadow { box-shadow: 0 2px 20px #0004; }
 
-/* AUTH & PROFILE */
 #error, .error { color: #db1d1d; margin: 5px 0 0 0; }
 input, button { margin: 7px 0; padding: 11px; border-radius: 6px; border: 1px solid #1db9542a; font-size: 1em; }
 input:focus { outline-color: #1db954; }
@@ -42,8 +41,6 @@ input:focus { outline-color: #1db954; }
 .like-btn { background: none; border: none; cursor: pointer; color: #888; margin-left: 8px; font-size:20px;}
 .add-btn, .remove-btn { background: #191414; color: #fff; border:none; border-radius:4px; padding:7px 11px; margin-left: 5px; cursor:pointer; font-size:0.95em;}
 .add-btn:hover, .remove-btn:hover { background: #1db954; color:#fff; }
-
-/* SONG/PLAYLIST CARDS */
 .song-item, .playlist-item {
   background: #fafafc;
   border-radius: 10px;
@@ -62,13 +59,9 @@ input:focus { outline-color: #1db954; }
 .song-artist { font-size: 0.97em; color: #444; }
 .playlist-item b { font-size: 1.12em; color: #191414;}
 .playlist-form { margin-bottom: 14px; }
-
-/* PROFILE */
 .profile-label { font-weight: 600; color: #191414; margin-right: 8px;}
 .profile-value { color: #1db954; font-weight:400; }
 #user-profile > div { margin:2px 0; }
-
-/* MODALS */
 .modal { display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(25,25,30,.18); z-index:100; }
 .modal-content { margin:62px auto 0 auto; max-width:435px; position:relative;}
 .close { position:absolute; right:20px; top:11px; color:#db1d1d; font-size:30px; font-weight:bold; cursor:pointer; }
@@ -78,4 +71,13 @@ input:focus { outline-color: #1db954; }
 @media (max-width:600px) {
   .grid { grid-template-columns:1fr }
   .card { max-width:98vw; padding:10px 2vw;}
+}
+.loading-spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #1db954;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
 }
