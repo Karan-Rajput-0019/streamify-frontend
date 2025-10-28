@@ -99,16 +99,16 @@ async function loadMusic() {
 // LOAD RECOMMENDATIONS
 function renderRecommendations(songs) {
   let html = songs.map(song => `
-    <div class="song-item">
+    <div class="song-card">
       <img class="song-cover" src="${song.coverImage || ''}" alt="">
       <div class="song-info">
         <div class="song-title">${song.title}</div>
         <div class="song-artist">by ${song.artist} (${song.album || ""})</div>
       </div>
       <div>
-        <button class="play-btn" onclick="playSong('${song.audioFile}')">Play</button>
-        <button class="like-btn${userData && userData.likedSongs && userData.likedSongs.includes(song._id) ? ' liked' : ''}" onclick="toggleLike('${song._id}',this)">♥</button>
-        <button class="add-btn" onclick="openAddModal('${song._id}')">Add to Playlist</button>
+        <button class="btn btn--primary play-btn" onclick="playSong('${song.audioFile}')">Play</button>
+        <button class="btn like-btn${userData && userData.likedSongs && userData.likedSongs.includes(song._id) ? ' liked' : ''}" onclick="toggleLike('${song._id}',this)">♥</button>
+        <button class="btn add-btn" onclick="openAddModal('${song._id}')">Add to Playlist</button>
       </div>
     </div>
   `).join("");
@@ -142,16 +142,16 @@ window.applySongFilter = applySongFilter;
 // RENDER SONGS w/ Add to Playlist
 function renderSongs(songs) {
   let html = songs.map(song => `
-    <div class="song-item">
+    <div class="song-card">
       <img class="song-cover" src="${song.coverImage || ''}" alt="">
       <div class="song-info">
         <div class="song-title">${song.title}</div>
         <div class="song-artist">by ${song.artist} (${song.album || ""})</div>
       </div>
       <div>
-        <button class="play-btn" onclick="playSong('${song.audioFile}')">Play</button>
-        <button class="like-btn${userData && userData.likedSongs && userData.likedSongs.includes(song._id) ? ' liked' : ''}" onclick="toggleLike('${song._id}',this)">♥</button>
-        <button class="add-btn" onclick="openAddModal('${song._id}')">Add to Playlist</button>
+        <button class="btn btn--primary play-btn" onclick="playSong('${song.audioFile}')">Play</button>
+        <button class="btn like-btn${userData && userData.likedSongs && userData.likedSongs.includes(song._id) ? ' liked' : ''}" onclick="toggleLike('${song._id}',this)">♥</button>
+        <button class="btn add-btn" onclick="openAddModal('${song._id}')">Add to Playlist</button>
       </div>
     </div>
   `).join("");
@@ -183,11 +183,11 @@ async function createPlaylist(event) {
 
 function renderPlaylists(playlists) {
   let html = playlists.map(pl => `
-    <div class="playlist-item">
+    <div class="playlist-card">
       <b>${pl.name}</b>
       <div>Songs: ${pl.songs.length}</div>
       <div>Created: ${new Date(pl.createdAt).toLocaleDateString()}</div>
-      <button class="btn btn-secondary" onclick="viewPlaylist('${pl._id}')">View Songs</button>
+      <button class="btn btn--secondary" onclick="viewPlaylist('${pl._id}')">View Songs</button>
     </div>
   `).join("");
   document.getElementById("playlist-list").innerHTML = html;
@@ -203,8 +203,8 @@ window.viewPlaylist = async function (playlistId) {
   document.getElementById("modal-songs").innerHTML = pl.songs.map((song, i) => `
     <div>
       <b>#${i+1}</b> ${song.title} <span style="color:#888;">by</span> ${song.artist}
-      <button class="play-btn" onclick="playSong('${song.audioFile}')">▶</button>
-      <button class="remove-btn" onclick="removeFromPlaylist('${pl._id}','${song._id}')">Remove</button>
+      <button class="btn btn--primary play-btn" onclick="playSong('${song.audioFile}')">▶</button>
+      <button class="btn remove-btn" onclick="removeFromPlaylist('${pl._id}','${song._id}')">Remove</button>
     </div>
   `).join("");
   document.getElementById("playlist-modal").style.display = "";
@@ -218,7 +218,7 @@ window.openAddModal = function(songId) {
   if (!token) return alert("Login required!");
   if (!playlists.length) return alert("Create a playlist first!");
   document.getElementById("add-modal-list").innerHTML = playlists.map(pl => `
-    <button class="btn btn-primary" onclick="addToPlaylist('${pl._id}','${songId}')">${pl.name}</button>
+    <button class="btn btn--primary" onclick="addToPlaylist('${pl._id}','${songId}')">${pl.name}</button>
   `).join("");
   document.getElementById("add-modal").style.display = "";
 };
